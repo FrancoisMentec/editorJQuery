@@ -1,5 +1,5 @@
 # editorJQuery
-It's a pcm editor in jQuery for OpenCompareproject
+It's a pcm editor in jQuery for OpenCompare project
 
 ## Install
 Install node.js
