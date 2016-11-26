@@ -20,7 +20,7 @@ html, body{
 }
 
 /**************************************************************************************************************************************************************************/
-/* configurator */
+/* editor */
 .editor{
 	width: 100%;
 	height: 100%;
@@ -105,7 +105,7 @@ html, body{
 	transform: rotate(180deg);
 }
 /**************************************************************************************************************************************************************************/
-/* content */
+/* content : configurator and pcm-wrap */
 .editor-content{
 	width: 100%;
 	height: calc(100% - 5.6em - 35px); /* 100% - configurator-header.height - configurator-action-bar.height */
@@ -118,6 +118,7 @@ html, body{
 
 .configurator{
 	transition: 0.2s;
+  transition-property: width;
 	box-sizing: border-box;
 	width: 200px;
 	height: 100%;
