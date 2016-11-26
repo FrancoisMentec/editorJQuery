@@ -1,7 +1,7 @@
-### editorJQuery
+# editorJQuery
 It's a pcm editor in jQuery for OpenCompareproject
 
-##Install
+## Install
 Install node.js
 
 On windows start Node.js command prompt
