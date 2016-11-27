@@ -74,6 +74,19 @@ Editor.prototype.loadPCM = function(pcmID=false){
       //Create a div for each cell
       for(var c=0;c<product.cells.size();c++){
         product.cells.get(c).div = $("<div>").addClass("pcm-cell").html(product.cells.get(c).content);
+        product.cells.get(c).match = true;
+      }
+
+      //Add a function that return if all cell.match==true
+      product.match = function(){
+        var match = true;
+        for(var c=0;c<this.cells.size();c++){
+          if(this.cells.get(c).match==false){
+            match = false;
+            break;
+          }
+        }
+        return match;
       }
 
       //Add a function that hide/show cells (used to hide products that doesn't match configurator)
@@ -159,8 +172,9 @@ Editor.prototype.showConfigurator = function(){
 //Called when a filter changed
 Editor.prototype.filterChanged = function(filter){
   for(var p in this.products){
-    var product = this.products[p];
-    product.setVisible(filter.match(product.getCell(filter.feature)))
+    var product = this.products[p]; // get the product
+    // chech if the product match all filters (product.match() is not evaluated if filter.match(product.getCell(filter.feature))==false, it's better for perf)
+    product.setVisible(filter.match(product.getCell(filter.feature)) && product.match());
   }
 }
 
@@ -178,7 +192,7 @@ function Filter(feature, products, editor){
   this.upper = false; //Maximum value which match filter
   this.step = 1; //Step for the slider when feature is a numeric value
   this.type = "undefined"; //Type of the values : Integer, Float, String
-  this.value = ""; //Will contain a regexp entered by the user in a search form, TODO
+  this.search = ""; //Will contain a regexp entered by the user in a search form, TODO
 
   //Determine type of feature
   var integer = 0;
@@ -249,7 +263,7 @@ function Filter(feature, products, editor){
     }
   }
 
-  //Create div
+  //Create div for configurator
   this.show = false;
   this.div = $("<div>").addClass("feature");
 
@@ -263,28 +277,54 @@ function Filter(feature, products, editor){
 
   this.content = $("<div>").addClass("feature-content").appendTo(this.contentWrap);
 
-  if(this.values.length==1 || (this.type=="integer" || this.type=="float") && this.min==this.max){
+  if(this.values.length==1 || (this.type=="integer" || this.type=="float") && this.min==this.max){ //If there is only one value
     this.content.append(this.values[0]);
-  }else if(this.type=="integer" || this.type=="float"){
+  }else if(this.type=="integer" || this.type=="float"){ //If type is a number
+    //Create the slider
     this.slider = new Slider(this.min, this.max, this.lower, this.upper, this.step, function(slider){
       that.lower = slider.lower;
       that.upper = slider.upper;
       that.editor.filterChanged(that);
     });
+
+    //Add the slider
     this.content.append(this.slider.div);
-  }else{
+  }else{ //Else, type is a string with multiple values
+    //Create and add the search input
+    this.searchInput = $("<input>").addClass("search-input").attr("placeholder", "Search").keyup(function(){
+      if(that.searchInput.val()!=that.search){
+        that.search = that.searchInput.val();
+        that.editor.filterChanged(that);
+      }
+    }).appendTo(this.content);
+
+    //Add all checkbox
     for(var c in this.checkboxs){
       this.content.append(this.checkboxs[c].div);
     }
   }
 }
 
+//Check if the cell match this filter
 Filter.prototype.match = function(cell){
-  return 	this.type=="integer" && parseInt(cell.content, 10)>=this.lower && parseInt(cell.content, 10)<=this.upper ||
-      this.type=="float" && parseFloat(cell.content)>=this.lower && parseFloat(cell.content)<=this.upper ||
-      this.type=="string" && this.checkboxs[cell.content].isChecked();
+  var match = false;
+  if(this.type=="integer"){
+    match = parseInt(cell.content, 10)>=this.lower && parseInt(cell.content, 10)<=this.upper;
+  }else if(this.type=="float"){
+    match = parseFloat(cell.content)>=this.lower && parseFloat(cell.content)<=this.upper;
+  }else if(this.type=="string"){
+    if(this.search.length>0){ //If there is a search regexp we use it and not the checkboxs
+      var regexp = new RegExp(this.search, 'i'); //Create a regexp with this.search that isn't case-sensitive
+      match = cell.content.match(regexp)!=null;
+    }else{ //Else we use checkboxs
+      match = this.checkboxs[cell.content].isChecked();
+    }
+  }
+  cell.match = match; //Set the cell.match attribute, it's used to check if all cell match them respective filter
+  return cell.match;
 }
 
+//Hide/Show the filter form (checkboxs, input, slider, ...)
 Filter.prototype.toggleShow = function(){
   this.show = !this.show;
   if(this.show){
@@ -369,7 +409,7 @@ function Slider(min, max, lower, upper, step, onChange=false){
   });
   this.div = $("<div>").addClass("slider");
   this.lowerInput = $("<input>").val(this.lower).keyup(function(){
-    that.setLower(parseFloat(that.lowerInput.val()));
+    that.setLower(parseFloat(that.lowerInput.val()), false);
   }).appendTo(this.div);
   this.range = $("<div>").addClass("slider-range").appendTo(this.div);
   this.lowerDiv = $("<div>").addClass("slider-thumb").css("left", (this.getLowerRatio()*100)+"%").mousedown(function(){
@@ -381,7 +421,7 @@ function Slider(min, max, lower, upper, step, onChange=false){
     that.upperDiv.addClass("active");
   }).appendTo(this.range);
   this.upperInput = $("<input>").val(this.upper).keyup(function(){
-    that.setUpper(parseFloat(that.upperInput.val()));
+    that.setUpper(parseFloat(that.upperInput.val()), false);
   }).appendTo(this.div);
 }
 
@@ -389,42 +429,72 @@ Slider.prototype.getLowerRatio = function(){
   return (this.lower-this.min)/(this.max-this.min);
 }
 
-Slider.prototype.setLower = function(lower){
+//lower is the value to set lower, correct is if we can correct the value if out of bound (if the false value is rejected)
+Slider.prototype.setLower = function(lower, correct=true){
   if(!isNaN(lower)){
     lower -= lower%this.step;
     if(lower<this.min){
-      lower = this.min;
+      if(correct){
+        lower = this.min;
+      }else{
+        return false;
+      }
     }
     if(lower>this.max){
-      lower = this.max;
+      if(correct){
+        lower = this.max;
+      }else{
+        return false;
+      }
     }
     if(lower>this.upper){
-      this.setUpper(lower);
+      if(correct){
+        this.setUpper(lower, correct);
+      }else{
+        return false;
+      }
     }
     this.lower = lower;
     this.lowerInput.val(this.lower);
     this.lowerDiv.css("left", (this.getLowerRatio()*100)+"%");
     this.triggerOnChange();
+    return true;
   }
+  return false;
 }
 
-Slider.prototype.setUpper = function(upper){
+//upper is the value to set upper, correct is if we can correct the value if out of bound (if the false value is rejected)
+Slider.prototype.setUpper = function(upper, correct=true){
   if(!isNaN(upper)){
     upper -= upper%this.step;
     if(upper<this.min){
-      upper = this.min;
+      if(correct){
+        upper = this.min;
+      }else{
+        return false;
+      }
     }
     if(upper<this.lower){
-      this.setLower(upper);
+      if(correct){
+        this.setLower(upper, correct);
+      }else{
+        return false;
+      }
     }
     if(upper>this.max){
-      upper = this.max;
+      if(correct){
+        upper = this.max;
+      }else{
+        return false;
+      }
     }
     this.upper = upper;
     this.upperInput.val(this.upper);
     this.upperDiv.css("left", (this.getUpperRatio()*100)+"%");
     this.triggerOnChange();
+    return true;
   }
+  return false;
 }
 
 Slider.prototype.getUpperRatio = function(){
