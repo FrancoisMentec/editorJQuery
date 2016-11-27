@@ -48,7 +48,7 @@ Editor.prototype.loadPCM = function(pcmID=false){
   }
 
   //API url : https://opencompare.org/api/get/
-  $.get("https://opencompare.org/api/get/" + this.pcmID, function(data) {
+  $.get("/pcm/" + this.pcmID + ".json", function(data) {
     that.metadata = data.metadata; //Get metadata
     that.pcm = pcmApi.loadPCMModelFromString(JSON.stringify(data.pcm)); //Load PCM
     //console.log(data);
@@ -124,8 +124,16 @@ Editor.prototype.pcmLoaded = function(){
   console.log(this.pcm);
 
   this.name.html(this.pcm.name);
-  this.license.html(this.metadata.license);
-  this.source.html(this.metadata.source);
+  var license = this.metadata.license;
+  if(license.length==0){
+    license = "unknown";
+  }
+  this.license.html(license);
+  var source = this.metadata.source;
+  if(source.length==0){
+    source = "unknown";
+  }
+  this.source.html(source);
 
   this.initPCM();
 

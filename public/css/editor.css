@@ -334,7 +334,6 @@ input[type="checkbox"]:checked+.checkbox-label{
 /**************************************************************************************************************************************************************************/
 /* PCM */
 .pcm{
-  position: relative;
   min-width: 100%;
   min-height: 100%;
   white-space: nowrap;
@@ -352,7 +351,7 @@ input[type="checkbox"]:checked+.checkbox-label{
   box-sizing: border-box;
   width: 100%;
   border-bottom: 1px solid #BDBDBD;
-  padding: 0 12px 0 12px;
+  padding: 0 28px 0 28px;
 }
 
 .pcm-column:first-child .pcm-column-header, .pcm-column:first-child .pcm-cell{
@@ -367,6 +366,7 @@ input[type="checkbox"]:checked+.checkbox-label{
   height: 56px;
   line-height: 56px;
   font-size: 1em;
+  font-family: Roboto-Bold;
   color: #9E9E9E;
 }
 
