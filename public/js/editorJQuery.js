@@ -135,6 +135,8 @@ Editor.prototype.pcmLoaded = function(){
   }
   this.source.html(source);
 
+  this.sortProducts();
+
   this.initPCM();
 
   this.initConfigurator();
@@ -184,6 +186,40 @@ Editor.prototype.filterChanged = function(filter){
     // chech if the product match all filters (product.match() is not evaluated if filter.match(product.getCell(filter.feature))==false, it's better for perf)
     product.setVisible(filter.match(product.getCell(filter.feature)) && product.match());
   }
+}
+
+//Sort products on the feature
+Editor.prototype.sortProducts = function(feature=false){
+  if(!feature){
+    feature = this.features[0];
+  }
+
+  this.quicksortProducts(0, this.products.length-1, feature);
+}
+
+Editor.prototype.quicksortProducts = function(lo, hi, f){
+  if(lo<hi){
+    var p = this.partitionProducts(lo, hi, f);
+    this.quicksortProducts(lo, p-1, f);
+    this.quicksortProducts(p+1,hi, f);
+  }
+}
+
+Editor.prototype.partitionProducts = function(lo, hi, f){
+  var pivot = this.products[hi];
+  var i = lo;
+  for(var j=lo;j<hi;j++){
+    if(this.products[j].getCell(f).content<=pivot.getCell(f).content){
+      var temp = this.products[i];
+      this.products[i] = this.products[j];
+      this.products[j] = temp;
+      i++;
+    }
+  }
+  var temp = this.products[i];
+  this.products[i] = this.products[hi];
+  this.products[hi] = temp;
+  return i;
 }
 
 //********************************************************************************************************************************************************************
