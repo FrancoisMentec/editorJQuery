@@ -1,11 +1,14 @@
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
+var Base64 = require('js-base64').Base64;
 
 app.use(express.static(__dirname+"/public"));
 
 //Routing
-app.get("*", function(req, res){
+app.get("/base64.js", function(req, res){
+	res.sendFile(__dirname+"/node_modules/js-base64/base64.js");
+}).get("/", function(req, res){
 	res.sendFile(__dirname+"/public/index.html");
 });
 

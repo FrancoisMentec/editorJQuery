@@ -123,24 +123,31 @@ Editor.prototype.loadPCM = function(pcmID=false){
 Editor.prototype.pcmLoaded = function(){
   console.log(this.pcm);
 
-  this.name.html(this.pcm.name);
+  //Name
+  var name = this.pcm.name;
+  if(name.length==0){
+    name = "No name";
+  }
+  this.name.html(name);
+
+  //License
   var license = this.metadata.license;
   if(license.length==0){
     license = "unknown";
   }
   this.license.html(license);
+
+  //Source
   var source = this.metadata.source;
   if(source.length==0){
     source = "unknown";
   }
   this.source.html(source);
 
-  //Sort products on first feature
+  //Sort products on first feature (display inside by calling Editor.initPCM())
   this.features[0].filter.setSorting(ASCENDING_SORTING);
-  //this.sortProducts(false, false);
 
-  //this.initPCM();
-
+  //Init configurator
   this.initConfigurator();
 }
 
