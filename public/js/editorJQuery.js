@@ -48,7 +48,7 @@ Editor.prototype.loadPCM = function(pcmID=false){
   }
 
   //API url : https://opencompare.org/api/get/
-  $.get("/pcm/" + this.pcmID + ".json", function(data) {
+  $.get("/pcm/"+this.pcmID, function(data) {
     that.metadata = data.metadata; //Get metadata
     that.pcm = pcmApi.loadPCMModelFromString(JSON.stringify(data.pcm)); //Load PCM
     //console.log(data);
@@ -206,10 +206,15 @@ Editor.prototype.sortProducts = function(feature=false){
     feature = this.features[0];
   }
 
+  //Sort products using quicksort
+  //console.time("quicksortProducts");
   this.quicksortProducts(0, this.products.length-1, feature);
+  //console.timeEnd("quicksortProducts");
 
   //Update pcm
+  //console.time("initPCM");
   editor.initPCM();
+  //console.timeEnd("initPCM");
 }
 
 Editor.prototype.quicksortProducts = function(lo, hi, f){
