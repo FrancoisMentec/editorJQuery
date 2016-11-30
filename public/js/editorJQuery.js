@@ -366,6 +366,10 @@ function Filter(feature, products, editor){
       }
     }).appendTo(this.content);
 
+    this.buttonSelectUnselectAll = $("<div>").addClass("button").click(function(){
+      that.selectUnselectAll();
+    }).html("Select/Unselect all").appendTo(this.content);
+
     //Add all checkbox
     for(var c in this.checkboxs){
       this.content.append(this.checkboxs[c].div);
@@ -390,6 +394,25 @@ Filter.prototype.match = function(cell){
   }
   cell.match = match; //Set the cell.match attribute, it's used to check if all cell match them respective filter
   return cell.match;
+}
+
+//Select/Unselect all checkboxs
+Filter.prototype.selectUnselectAll = function(){
+  this.search = "";
+
+  var select = true;
+  for(var c in this.checkboxs){
+    if(this.checkboxs[c].notChecked()){
+      select = false;
+      break;
+    }
+  }
+
+  for(var c in this.checkboxs){
+    this.checkboxs[c].setChecked(!select, false);
+  }
+
+  this.editor.filterChanged(this);
 }
 
 //Hide/Show the filter form (checkboxs, input, slider, ...)
@@ -480,16 +503,23 @@ function Checkbox(name, onChange=false, checked=true){
   }).appendTo(this.div);
 }
 
-Checkbox.prototype.setChecked = function(checked){
+Checkbox.prototype.setChecked = function(checked, trigger=true){
   if(typeof checked == "undefined"){
     checked = !this.isChecked();
   }
   this.checkbox.prop('checked', checked);
-  this.triggerOnChange();
+
+  if(trigger){
+    this.triggerOnChange();
+  }
 }
 
 Checkbox.prototype.isChecked = function(){
   return this.checkbox.is(":checked");
+}
+
+Checkbox.prototype.notChecked = function(){
+  return !this.isChecked();
 }
 
 Checkbox.prototype.triggerOnChange = function(){
