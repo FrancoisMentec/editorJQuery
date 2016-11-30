@@ -13,6 +13,38 @@
     src: url(/font/Roboto-Black.ttf);
 }
 
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url(/font/MaterialIcons-Regular.ttf);
+}
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;  /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Support for IE. */
+  font-feature-settings: 'liga';
+}
+
 html, body{
   width: 100%;
   height: 100%;
@@ -344,6 +376,7 @@ input[type="checkbox"]:checked+.checkbox-label{
 
 .pcm-column{
   display: inline-block;
+  vertical-align: top;
 }
 
 .integer, .float{
@@ -366,11 +399,58 @@ input[type="checkbox"]:checked+.checkbox-label{
 }
 
 .pcm-column-header{
+  position: relative;
   height: 56px;
   line-height: 56px;
   font-size: 1em;
   font-family: Roboto-Bold;
   color: #9E9E9E;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pcm-column-header.ascending, .pcm-column-header.descending{
+  color: #26a69a;
+}
+
+.string .pcm-column-header::after{
+  content: "";
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  display: inline-block;
+  width: 1em;
+  vertical-align: top;
+  margin-left: 12px;
+}
+
+.string .pcm-column-header.ascending::after{
+  content: "arrow_downward";
+}
+
+.string .pcm-column-header.descending::after{
+  content: "arrow_upward";
+}
+
+.integer .pcm-column-header::before, .float .pcm-column-header::before{
+  content: "";
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  display: inline-block;
+  width: 1em;
+  vertical-align: top;
+  margin-right: 12px;
+}
+
+.integer .pcm-column-header.ascending::before, .float .pcm-column-header.ascending::before{
+  content: "arrow_downward";
+}
+
+.integer .pcm-column-header.descending::before, .float .pcm-column-header.descending::before{
+  content: "arrow_upward";
 }
 
 .pcm-cell{

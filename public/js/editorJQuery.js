@@ -135,19 +135,23 @@ Editor.prototype.pcmLoaded = function(){
   }
   this.source.html(source);
 
-  this.sortProducts();
+  //Sort products on first feature
+  this.features[0].filter.setSorting(ASCENDING_SORTING);
+  //this.sortProducts(false, false);
 
-  this.initPCM();
+  //this.initPCM();
 
   this.initConfigurator();
 }
 
 //Called in pcmLoaded to update the pcm
 Editor.prototype.initPCM = function(){
+  this.pcmDiv.find(".pcm-column-header").detach();
+  this.pcmDiv.find(".pcm-cell").detach();
   this.pcmDiv.empty();
   for(var f in this.features){
     var col = $("<div>").addClass("pcm-column").addClass(this.features[f].filter.type).appendTo(this.pcmDiv);
-    col.append($("<div>").addClass("pcm-column-header").html(this.features[f].name));
+    col.append(this.features[f].filter.columnHeader);
     for(var p in this.products){
       col.append(this.products[p].getCell(this.features[f]).div);
     }
@@ -188,13 +192,16 @@ Editor.prototype.filterChanged = function(filter){
   }
 }
 
-//Sort products on the feature
+//Sort products on the feature using quicksort
 Editor.prototype.sortProducts = function(feature=false){
   if(!feature){
     feature = this.features[0];
   }
 
   this.quicksortProducts(0, this.products.length-1, feature);
+
+  //Update pcm
+  editor.initPCM();
 }
 
 Editor.prototype.quicksortProducts = function(lo, hi, f){
@@ -209,7 +216,7 @@ Editor.prototype.partitionProducts = function(lo, hi, f){
   var pivot = this.products[hi];
   var i = lo;
   for(var j=lo;j<hi;j++){
-    if(this.products[j].getCell(f).content<=pivot.getCell(f).content){
+    if(f.filter.compare(this.products[j], pivot)<=0){
       var temp = this.products[i];
       this.products[i] = this.products[j];
       this.products[j] = temp;
@@ -224,6 +231,10 @@ Editor.prototype.partitionProducts = function(lo, hi, f){
 
 //********************************************************************************************************************************************************************
 //Filter
+var NO_SORTING = 1;
+var ASCENDING_SORTING = 2;
+var DESCENDING_SORTING = 3;
+
 function Filter(feature, products, editor){
   var that = this;
   this.feature = feature;
@@ -237,6 +248,7 @@ function Filter(feature, products, editor){
   this.step = 1; //Step for the slider when feature is a numeric value
   this.type = "undefined"; //Type of the values : Integer, Float, String
   this.search = ""; //Will contain a regexp entered by the user in a search form, TODO
+  this.sorting = NO_SORTING;
 
   //Determine type of feature
   var integer = 0;
@@ -306,6 +318,11 @@ function Filter(feature, products, editor){
       });
     }
   }
+
+  //Create div for column header
+  this.columnHeader = $("<div>").addClass("pcm-column-header").click(function(){
+    that.swapSorting();
+  }).html(this.feature.name);
 
   //Create div for configurator
   this.show = false;
@@ -379,6 +396,67 @@ Filter.prototype.toggleShow = function(){
     this.arrow.removeClass("bottom");
   }
 }
+
+//Change sorting
+Filter.prototype.swapSorting = function(){
+  if(this.sorting==ASCENDING_SORTING){
+    this.setSorting(DESCENDING_SORTING);
+  }else{
+    this.setSorting(ASCENDING_SORTING);
+  }
+}
+
+Filter.prototype.setSorting = function(sorting, autoSort=true, resetOther=true){
+  //Reset all other filter
+  if(resetOther){
+    for(var f in this.editor.features){
+      this.editor.features[f].filter.setSorting(NO_SORTING, false, false);
+    }
+  }
+
+  //remove old class
+  if(this.sorting==ASCENDING_SORTING){
+    this.columnHeader.removeClass("ascending");
+  }else if(this.sorting==DESCENDING_SORTING){
+    this.columnHeader.removeClass("descending");
+  }
+
+  //set new value
+  this.sorting = sorting;
+
+  //add new class
+  if(this.sorting==ASCENDING_SORTING){
+    this.columnHeader.addClass("ascending");
+  }else if(this.sorting==DESCENDING_SORTING){
+    this.columnHeader.addClass("descending");
+  }
+
+  //sort
+  if(autoSort){
+    this.editor.sortProducts(this.feature);
+  }
+}
+
+//Compare
+Filter.prototype.compare = function(p1, p2){
+  var res = 0;
+  if(this.sorting==NO_SORTING){
+    console.log("Try to compare 2 product2 using a filter without sorting direction");
+  }else{
+    if(p1.getCell(this.feature).content>p2.getCell(this.feature).content){
+      res = 1;
+    }else if(p1.getCell(this.feature).content<p2.getCell(this.feature).content){
+      res = -1;
+    }
+  }
+
+  if(this.sorting==DESCENDING_SORTING){
+    res = res * -1;
+  }
+
+  return res;
+}
+
 
 //********************************************************************************************************************************************************************
 //Checkbox
