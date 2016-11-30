@@ -56,15 +56,15 @@ Editor.prototype.loadPCM = function(pcmID=false){
 
     //Extract products
     that.products = [];
-    for (var i = 0; i < that.pcm.products.size(); i++) {
-      var product = that.pcm.products.get(i);
+    for (var p in that.pcm.products.array) {
+      var product = that.pcm.products.array[p];
 
       //Add a function that return the cell corresponding to the feature
       product.getCell = function(feature){
         var cell = false;
-        for(var i=0;i<this.cells.size();i++){
-          if(this.cells.get(i).feature.generated_KMF_ID == feature.generated_KMF_ID){
-            cell = this.cells.get(i);
+        for(var c in this.cells.array){
+          if(this.cells.array[c].feature.generated_KMF_ID == feature.generated_KMF_ID){
+            cell = this.cells.array[c];
             break;
           }
         }
@@ -72,16 +72,17 @@ Editor.prototype.loadPCM = function(pcmID=false){
       }
 
       //Create a div for each cell
-      for(var c=0;c<product.cells.size();c++){
-        product.cells.get(c).div = $("<div>").addClass("pcm-cell").html(product.cells.get(c).content);
-        product.cells.get(c).match = true;
+      for(var c in product.cells.array){
+        var cell = product.cells.array[c];
+        cell.div = $("<div>").addClass("pcm-cell").html(cell.content);
+        cell.match = true;
       }
 
       //Add a function that return if all cell.match==true
       product.match = function(){
         var match = true;
-        for(var c=0;c<this.cells.size();c++){
-          if(this.cells.get(c).match==false){
+        for(var c in this.cells.array){
+          if(this.cells.array[c].match==false){
             match = false;
             break;
           }
@@ -91,11 +92,11 @@ Editor.prototype.loadPCM = function(pcmID=false){
 
       //Add a function that hide/show cells (used to hide products that doesn't match configurator)
       product.setVisible = function(visible){
-        for(var c=0;c<this.cells.size();c++){
+        for(var c in this.cells.array){
           if(visible){
-            this.cells.get(c).div.removeClass("hidden");
+            this.cells.array[c].div.removeClass("hidden");
           }else{
-            this.cells.get(c).div.addClass("hidden");
+            this.cells.array[c].div.addClass("hidden");
           }
         }
       }
@@ -105,8 +106,8 @@ Editor.prototype.loadPCM = function(pcmID=false){
 
     //Extract features
     that.features = [];
-    for (var i = 0; i < that.pcm.features.size(); i++) {
-      var feature = that.pcm.features.get(i);
+    for (var f in that.pcm.features.array) {
+      var feature = that.pcm.features.array[f];
       feature.filter = new Filter(feature, that.products, that); //filter is used to filter products on this feature
       if(that.pcm.productsKey.generated_KMF_ID == feature.generated_KMF_ID){
         that.features.splice(0, 0, feature);
