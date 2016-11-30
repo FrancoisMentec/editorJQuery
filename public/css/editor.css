@@ -278,6 +278,7 @@ html, body{
 	cursor: pointer;
 	outline: none;
   white-space: nowrap;
+  user-select: none;
 }
 
 .button *{
