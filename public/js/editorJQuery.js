@@ -10,6 +10,7 @@ function Editor(divID, pcmID){
   this.metadata = false;
 
   //Create header
+  this.headerShow = true;
   this.header = $("<div>").addClass("editor-header").appendTo(this.div);
   this.name = $("<div>").addClass("pcm-name").html("No pcm loaded").appendTo(this.header);
   this.licenseDiv = $("<div>").addClass("pcm-param").html("<b>License : </b>").appendTo(this.header);
@@ -25,6 +26,12 @@ function Editor(divID, pcmID){
   this.configuratorArrow = $("<div>").addClass("configurator-arrow").appendTo(this.showConfiguratorButton);
   this.showConfiguratorButton.append(" ");
   this.showConfiguratorButtonMessage = $("<span>").html("Hide configurator").appendTo(this.showConfiguratorButton);
+
+  //Action bar right pane
+  this.actionBarRightPane = $("<div>").addClass("editor-action-bar-right-pane").appendTo(this.actionBar);
+  this.showHeaderButton = $("<div>").addClass("button").click(function(){
+    that.showHeader();
+  }).html('<i class="material-icons">keyboard_arrow_up</i>').appendTo(this.actionBarRightPane);
 
   //Create content
   this.content = $("<div>").addClass("editor-content").appendTo(this.div);
@@ -211,6 +218,21 @@ Editor.prototype.showConfigurator = function(){
     this.pcmWrap.addClass("full-width");
     this.configuratorArrow.addClass("right");
     this.showConfiguratorButtonMessage.html("Show configurator");
+  }
+}
+
+//Hide or show the header
+Editor.prototype.showHeader = function(){
+  this.headerShow = !this.headerShow;
+
+  if(this.headerShow){
+    this.header.removeClass("hidden");
+    this.content.removeClass("full-height");
+    this.showHeaderButton.html('<i class="material-icons">keyboard_arrow_up</i>');
+  }else{
+    this.header.addClass("hidden");
+    this.content.addClass("full-height");
+    this.showHeaderButton.html('<i class="material-icons">keyboard_arrow_down</i>');
   }
 }
 
