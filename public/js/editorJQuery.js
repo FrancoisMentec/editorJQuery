@@ -40,6 +40,18 @@ function Editor(divID, pcmID){
   this.pcmDiv = $("<div>").addClass("pcm").appendTo(this.pcmWrap);
 }
 
+//Some accessors
+Editor.prototype.getFeatureByName = function(name){
+  var feature = false;
+  for(var f in this.features){
+    if(this.features[f].name==name){
+      feature = this.features[f];
+      break;
+    }
+  }
+  return feature;
+}
+
 //Load the pcm
 Editor.prototype.loadPCM = function(pcmID=false){
   var that = this;
@@ -106,18 +118,36 @@ Editor.prototype.loadPCM = function(pcmID=false){
 
     //Extract features
     that.features = [];
-    for (var f in that.pcm.features.array) {
+    that.addFeaturesFromArray(that.pcm.features.array);
+    /*for (var f in that.pcm.features.array) {
       var feature = that.pcm.features.array[f];
       feature.filter = new Filter(feature, that.products, that); //filter is used to filter products on this feature
-      if(that.pcm.productsKey.generated_KMF_ID == feature.generated_KMF_ID){
+      if(that.pcm.productsKey!=null && that.pcm.productsKey.generated_KMF_ID == feature.generated_KMF_ID){
         that.features.splice(0, 0, feature);
       }else{
         that.features.push(feature);
       }
-    }
+    }*/
 
     that.pcmLoaded();
   });
+}
+
+//Add all feature in the array to this.features
+Editor.prototype.addFeaturesFromArray = function(array){
+  for(var i in array){
+    var feature = array[i];
+    if(feature.subFeatures){
+      this.addFeaturesFromArray(feature.subFeatures.array);
+    }else{
+      feature.filter = new Filter(feature, this); //filter is used to filter products on this feature
+      if(this.pcm.productsKey!=null && this.pcm.productsKey.generated_KMF_ID == feature.generated_KMF_ID){
+        this.features.splice(0, 0, feature);
+      }else{
+        this.features.push(feature);
+      }
+    }
+  }
 }
 
 //Called when the pcm is loaded to update the UI
@@ -248,7 +278,7 @@ var NO_SORTING = 1;
 var ASCENDING_SORTING = 2;
 var DESCENDING_SORTING = 3;
 
-function Filter(feature, products, editor){
+function Filter(feature, editor){
   var that = this;
   this.feature = feature;
   this.editor = editor;
@@ -268,20 +298,22 @@ function Filter(feature, products, editor){
   var float = 0;
   var string = 0;
 
-  for(var p in products){
-    var content = products[p].getCell(feature).content;
+  for(var p in this.editor.products){
+    var content = this.editor.products[p].getCell(feature).content;
 
-    if($.inArray(content, this.values)==-1){
-      this.values.push(content);
-    }
+    if(content){
+      if($.inArray(content, this.values)==-1){
+        this.values.push(content);
+      }
 
-    if(content.length>0){
-      if(/^\d+$/.test(content)){
-        integer++;
-      }else if(/^\d+\.\d+$/.test(content)){
-        float++;
-      }else{
-        string++;
+      if(content.length>0){
+        if(/^\d+$/.test(content)){
+          integer++;
+        }else if(/^\d+\.\d+$/.test(content)){
+          float++;
+        }else{
+          string++;
+        }
       }
     }
   }
