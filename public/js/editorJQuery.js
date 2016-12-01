@@ -119,15 +119,6 @@ Editor.prototype.loadPCM = function(pcmID=false){
     //Extract features
     that.features = [];
     that.addFeaturesFromArray(that.pcm.features.array);
-    /*for (var f in that.pcm.features.array) {
-      var feature = that.pcm.features.array[f];
-      feature.filter = new Filter(feature, that.products, that); //filter is used to filter products on this feature
-      if(that.pcm.productsKey!=null && that.pcm.productsKey.generated_KMF_ID == feature.generated_KMF_ID){
-        that.features.splice(0, 0, feature);
-      }else{
-        that.features.push(feature);
-      }
-    }*/
 
     that.pcmLoaded();
   });
@@ -172,6 +163,8 @@ Editor.prototype.pcmLoaded = function(){
   var source = this.metadata.source;
   if(source.length==0){
     source = "unknown";
+  }else{
+    source = "<a href='"+source+"' target='_blank'>"+source+"</a>";
   }
   this.source.html(source);
 

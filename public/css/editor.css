@@ -56,6 +56,16 @@ html, body{
   margin: 0;
 }
 
+a{
+  color: #26a69a;
+  text-decoration: none;
+  font-family: Roboto-Medium;
+}
+
+a:hover{
+  text-decoration: underline;
+}
+
 /**************************************************************************************************************************************************************************/
 /* editor */
 .editor{
