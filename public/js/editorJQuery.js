@@ -430,21 +430,43 @@ function Filter(feature, editor){
   }
 }
 
-//Check if the cell match this filter
-Filter.prototype.match = function(cell){
-  var match = false;
-  if(this.type=="integer"){
-    match = parseInt(cell.content, 10)>=this.lower && parseInt(cell.content, 10)<=this.upper;
-  }else if(this.type=="float"){
-    match = parseFloat(cell.content)>=this.lower && parseFloat(cell.content)<=this.upper;
-  }else if(this.type=="string"){
-    if(this.search.length>0){ //If there is a search regexp we use it and not the checkboxs
-      var regexp = new RegExp(this.search, 'i'); //Create a regexp with this.search that isn't case-sensitive
-      match = cell.content.match(regexp)!=null;
-    }else{ //Else we use checkboxs
-      match = this.checkboxs[cell.content].isChecked();
+//Check if all value are matched
+Filter.prototype.matchAll = function(){
+  var res = true;
+  if(this.type=="integer" || this.type=="float"){
+    res = (this.lower==this.min && this.upper==this.max);
+  }else{
+    for(var c in this.checkboxs){
+      if(this.checkboxs[c].notChecked()){
+        res = false;
+        break;
+      }
     }
   }
+  return res;
+}
+
+//Check if the cell match this filter
+Filter.prototype.match = function(cell){
+  var match = this.matchAll();
+
+  if(!match){
+    if(this.type=="integer"){
+      match = parseInt(cell.content, 10)>=this.lower && parseInt(cell.content, 10)<=this.upper;
+    }else if(this.type=="float"){
+      match = parseFloat(cell.content)>=this.lower && parseFloat(cell.content)<=this.upper;
+    }else if(this.type=="string"){
+      if(this.search.length>0){ //If there is a search regexp we use it and not the checkboxs
+        var regexp = new RegExp(this.search, 'i'); //Create a regexp with this.search that isn't case-sensitive
+        match = cell.content.match(regexp)!=null;
+      }else{ //Else we use checkboxs
+        if(typeof this.checkboxs[cell.content] != "undefined"){
+          match = this.checkboxs[cell.content].isChecked();
+        }
+      }
+    }
+  }
+
   cell.match = match; //Set the cell.match attribute, it's used to check if all cell match them respective filter
   return cell.match;
 }
@@ -453,13 +475,7 @@ Filter.prototype.match = function(cell){
 Filter.prototype.selectUnselectAll = function(){
   this.search = "";
 
-  var select = true;
-  for(var c in this.checkboxs){
-    if(this.checkboxs[c].notChecked()){
-      select = false;
-      break;
-    }
-  }
+  var select = this.matchAll();
 
   for(var c in this.checkboxs){
     this.checkboxs[c].setChecked(!select, false);
