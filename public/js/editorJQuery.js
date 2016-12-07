@@ -238,6 +238,7 @@ Editor.prototype.showHeader = function(){
 
 //Called when a filter changed
 Editor.prototype.filterChanged = function(filter){
+  //console.log("Filter changed for feature : "+filter.feature.name);
   for(var p in this.products){
     var product = this.products[p]; // get the product
     // chech if the product match all filters (product.match() is not evaluated if filter.match(product.getCell(filter.feature))==false, it's better for perf)
@@ -264,13 +265,6 @@ Editor.prototype.sortProducts = function(feature=false){
 
 //l is the lower index to sort, h the highter and f the feature
 Editor.prototype.quicksortProducts = function(l, h, f){
-  /*
-  //Recursive terrible version
-  if(l<h){
-    var p = this.partitionProducts(l, h, f);
-    this.quicksortProducts(l, p-1, f);
-    this.quicksortProducts(p+1,h, f);
-  }*/
   var stack = [];
   stack.push(l);
   stack.push(h);
@@ -318,7 +312,8 @@ function Filter(feature, editor){
   var that = this;
   this.feature = feature;
   this.editor = editor;
-  this.values = []; //Contains all values for this feature
+  this.values = []; //Contains all different values for this feature
+  this.hasCheckbox = false; //Set at true is checkbox are used
   this.checkboxs = {}; //For each value associate a checkbox that say if the value match the filter
   this.min = false; //Minimum value in all values
   this.max = false; //Maximum value in all values
@@ -338,6 +333,12 @@ function Filter(feature, editor){
     var content = this.editor.products[p].getCell(feature).content;
 
     if(content){
+      /*if(typeof this.values[content] == "undefined"){
+        this.values[content] = 1;
+      }else{
+        this.values[content]++;
+      }*/
+
       if($.inArray(content, this.values)==-1){
         this.values.push(content);
       }
@@ -393,10 +394,14 @@ function Filter(feature, editor){
 
     this.values.sort();
 
-    for(var v in this.values){
-      this.checkboxs[this.values[v]] = new Checkbox(this.values[v], function(){
-        that.editor.filterChanged(that);
-      });
+    if(this.values.length<=20){ //Create checkboxs only if there are les than 20 differents values
+      this.hasCheckbox = true;
+      for(var v in this.values){
+        var value = this.values[v];
+        this.checkboxs[value] = new Checkbox(value, function(){
+          that.editor.filterChanged(that);
+        });
+      }
     }
   }
 
@@ -440,13 +445,15 @@ function Filter(feature, editor){
       }
     }).appendTo(this.content);
 
-    this.buttonSelectUnselectAll = $("<div>").addClass("button").click(function(){
-      that.selectUnselectAll();
-    }).html("Select/Unselect all").appendTo(this.content);
+    if(this.hasCheckbox){
+      this.buttonSelectUnselectAll = $("<div>").addClass("button").click(function(){
+        that.selectUnselectAll();
+      }).html("Select/Unselect all").appendTo(this.content);
 
-    //Add all checkbox
-    for(var c in this.checkboxs){
-      this.content.append(this.checkboxs[c].div);
+      //Add all checkbox
+      for(var c in this.checkboxs){
+        this.content.append(this.checkboxs[c].div);
+      }
     }
   }
 }
@@ -456,7 +463,9 @@ Filter.prototype.matchAll = function(){
   var res = true;
   if(this.type=="integer" || this.type=="float"){
     res = (this.lower==this.min && this.upper==this.max);
-  }else{
+  }else if(this.search.length>0){
+    res = false;
+  }else if(this.hasCheckbox){
     for(var c in this.checkboxs){
       if(this.checkboxs[c].notChecked()){
         res = false;
@@ -496,7 +505,14 @@ Filter.prototype.match = function(cell){
 Filter.prototype.selectUnselectAll = function(){
   this.search = "";
 
-  var select = this.matchAll();
+  var select = true;
+
+  for(var c in this.checkboxs){
+    if(this.checkboxs[c].notChecked()){
+      select = false;
+      break;
+    }
+  }
 
   for(var c in this.checkboxs){
     this.checkboxs[c].setChecked(!select, false);
