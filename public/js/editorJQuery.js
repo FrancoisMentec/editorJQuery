@@ -262,18 +262,39 @@ Editor.prototype.sortProducts = function(feature=false){
   //console.timeEnd("initPCM");
 }
 
-Editor.prototype.quicksortProducts = function(lo, hi, f){
-  if(lo<hi){
-    var p = this.partitionProducts(lo, hi, f);
-    this.quicksortProducts(lo, p-1, f);
-    this.quicksortProducts(p+1,hi, f);
+//l is the lower index to sort, h the highter and f the feature
+Editor.prototype.quicksortProducts = function(l, h, f){
+  /*
+  //Recursive terrible version
+  if(l<h){
+    var p = this.partitionProducts(l, h, f);
+    this.quicksortProducts(l, p-1, f);
+    this.quicksortProducts(p+1,h, f);
+  }*/
+  var stack = [];
+  stack.push(l);
+  stack.push(h);
+  while(stack.length>0){
+    h = stack.pop();
+    l = stack.pop();
+    var p = this.partitionProducts(l, h, f);
+
+    if(p-1>l){
+      stack.push(l);
+      stack.push(p-1);
+    }
+
+    if(p+1<h){
+      stack.push(p+1);
+      stack.push(h);
+    }
   }
 }
 
-Editor.prototype.partitionProducts = function(lo, hi, f){
-  var pivot = this.products[hi];
-  var i = lo;
-  for(var j=lo;j<hi;j++){
+Editor.prototype.partitionProducts = function(l, h, f){
+  var pivot = this.products[h];
+  var i = l;
+  for(var j=l;j<h;j++){
     if(f.filter.compare(this.products[j], pivot)<=0){
       var temp = this.products[i];
       this.products[i] = this.products[j];
@@ -282,8 +303,8 @@ Editor.prototype.partitionProducts = function(lo, hi, f){
     }
   }
   var temp = this.products[i];
-  this.products[i] = this.products[hi];
-  this.products[hi] = temp;
+  this.products[i] = this.products[h];
+  this.products[h] = temp;
   return i;
 }
 

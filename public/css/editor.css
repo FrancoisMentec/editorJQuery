@@ -545,6 +545,9 @@ input[type="checkbox"]:checked+.checkbox-label{
 
 .pcm-cell{
   height: 48px;
+  max-width: 80em;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 48px;
   font-size: 1.1em;
   color: #212121;
