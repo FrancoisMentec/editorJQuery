@@ -78,14 +78,17 @@ Editor.prototype.loadPCM = function(pcmID=false){
     for (var p in that.pcm.products.array) {
       var product = that.pcm.products.array[p];
 
+      product.cellsByFeature = {};
+      for(var c in product.cells.array){
+        var cell = product.cells.array[c];
+        product.cellsByFeature[cell.feature.generated_KMF_ID] = cell;
+      }
+
       //Add a function that return the cell corresponding to the feature
       product.getCell = function(feature){
-        var cell = false;
-        for(var c in this.cells.array){
-          if(this.cells.array[c].feature.generated_KMF_ID == feature.generated_KMF_ID){
-            cell = this.cells.array[c];
-            break;
-          }
+        var cell = this.cellsByFeature[feature.generated_KMF_ID];
+        if(typeof cell == "undefined"){
+          cell = false;
         }
         return cell;
       }
@@ -254,7 +257,7 @@ Editor.prototype.sortProducts = function(feature=false){
 
   //Sort products using quicksort
   //console.time("quicksortProducts");
-  this.quicksortProducts(0, this.products.length-1, feature);
+  this.quicksortProducts(feature);
   //console.timeEnd("quicksortProducts");
 
   //Update pcm
@@ -263,14 +266,14 @@ Editor.prototype.sortProducts = function(feature=false){
   //console.timeEnd("initPCM");
 }
 
-//l is the lower index to sort, h the highter and f the feature
-Editor.prototype.quicksortProducts = function(l, h, f){
+//sort products on feature f
+Editor.prototype.quicksortProducts = function(f){
   var stack = [];
-  stack.push(l);
-  stack.push(h);
+  stack.push(0);
+  stack.push(this.products.length-1);
   while(stack.length>0){
-    h = stack.pop();
-    l = stack.pop();
+    var h = stack.pop();
+    var l = stack.pop();
     var p = this.partitionProducts(l, h, f);
 
     if(p-1>l){
@@ -406,8 +409,9 @@ function Filter(feature, editor){
   }
 
   //Create div for column header
-  this.columnHeader = $("<div>").addClass("pcm-column-header").click(function(){
+  this.columnHeader = $("<div>").addClass("pcm-column-header").click(function(event){
     that.swapSorting();
+    event.stopImmediatePropagation();
   }).html(this.feature.name);
 
   //Create div for configurator
@@ -535,6 +539,7 @@ Filter.prototype.toggleShow = function(){
 
 //Change sorting
 Filter.prototype.swapSorting = function(){
+  console.log("Swap sorting for feature : "+this.feature.name);
   if(this.sorting==ASCENDING_SORTING){
     this.setSorting(DESCENDING_SORTING);
   }else{
@@ -577,7 +582,7 @@ Filter.prototype.setSorting = function(sorting, autoSort=true, resetOther=true){
 Filter.prototype.compare = function(p1, p2){
   var res = 0;
   if(this.sorting==NO_SORTING){
-    console.log("Try to compare 2 product2 using a filter without sorting direction");
+    console.log("Try to compare 2 product using a filter without sorting direction");
   }else{
     if(p1.getCell(this.feature).content>p2.getCell(this.feature).content){
       res = 1;
