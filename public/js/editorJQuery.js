@@ -2,12 +2,16 @@
 //Editor
 function Editor(divID, pcmID){
   var that = this;
+  var self = this;
   this.div = $("#"+divID).addClass("editor");
   this.pcmID = pcmID;
   this.loadPCM();
 
   this.pcm = false;
   this.metadata = false;
+
+  this.views = {};
+  this._view = null;
 
   //Create header
   this.headerShow = true;
@@ -21,16 +25,24 @@ function Editor(divID, pcmID){
   //Create action bar
   this.actionBar = $("<div>").addClass("editor-action-bar").appendTo(this.div);
   this.showConfiguratorButton = $("<div>").addClass("button").click(function(){
-    that.showConfigurator();
+    self.showConfigurator();
   }).appendTo(this.actionBar);
   this.configuratorArrow = $("<div>").addClass("configurator-arrow").appendTo(this.showConfiguratorButton);
   this.showConfiguratorButton.append(" ");
   this.showConfiguratorButtonMessage = $("<span>").html("Hide configurator").appendTo(this.showConfiguratorButton);
 
+  this.showPCMButton = $('<div>').addClass('button').html('Show pcm').click(function(){
+    self.showView('pcmDiv');
+  }).appendTo(this.actionBar);
+
+  this.showChartButton = $('<div>').addClass('button').html('Show chart').click(function(){
+    self.showView('chartDiv');
+  }).appendTo(this.actionBar);
+
   //Action bar right pane
   this.actionBarRightPane = $("<div>").addClass("editor-action-bar-right-pane").appendTo(this.actionBar);
   this.showHeaderButton = $("<div>").addClass("button").click(function(){
-    that.showHeader();
+    self.showHeader();
   }).html('<i class="material-icons">keyboard_arrow_up</i>').appendTo(this.actionBarRightPane);
 
   //Create content
@@ -44,7 +56,31 @@ function Editor(divID, pcmID){
   this.pcmWrap = $("<div>").addClass("pcm-wrap").appendTo(this.content);
 
   //Create pcmDiv
-  this.pcmDiv = $("<div>").addClass("pcm").appendTo(this.pcmWrap);
+  this.views.pcmDiv = $("<div>").addClass("pcm-table").appendTo(this.pcmWrap);
+
+  //Create chart view
+  this.views.chartDiv = $("<div>").html("Chart").appendTo(this.pcmWrap);
+  this.chartCanvas = $('<canvas>').appendTo(this.views.chartDiv);
+
+  this.showView('pcmDiv');
+}
+
+//Show view
+Editor.prototype.showView = function(view){
+  if(typeof view === 'undefined'){
+    view = this.views.pcmDiv;
+  }else if(typeof view === 'string'){
+    view = this.views[view];
+  }
+
+  if(this._view !== view){
+    if(this._view != null){
+      this._view.hide();
+    }
+
+    this._view = view;
+    this._view.show();
+  }
 }
 
 //Some accessors
@@ -178,24 +214,64 @@ Editor.prototype.pcmLoaded = function(){
   }
   this.source.html(source);
 
-  //Sort products on first feature (display inside by calling Editor.initPCM())
-  this.features[0].filter.setSorting(ASCENDING_SORTING);
-
   //Init configurator
   this.initConfigurator();
+
+  //Sort products on first feature (display inside by calling Editor.initPCM())
+  this.features[0].filter.setSorting(ASCENDING_SORTING);
 }
 
 //Called in pcmLoaded to update the pcm
 Editor.prototype.initPCM = function(){
-  this.pcmDiv.find(".pcm-column-header").detach();
-  this.pcmDiv.find(".pcm-cell").detach();
-  this.pcmDiv.empty();
+  //init table
+  this.views.pcmDiv.find(".pcm-column-header").detach();
+  this.views.pcmDiv.find(".pcm-cell").detach();
+  this.views.pcmDiv.empty();
   for(var f in this.features){
-    var col = $("<div>").addClass("pcm-column").addClass(this.features[f].filter.type).appendTo(this.pcmDiv);
+    var col = $("<div>").addClass("pcm-column").addClass(this.features[f].filter.type).appendTo(this.views.pcmDiv);
     col.append(this.features[f].filter.columnHeader);
     for(var p in this.products){
       col.append(this.products[p].getCell(this.features[f]).div);
     }
+  }
+  //init chart
+  this.chartDataX = null;
+  this.chartDataY = null;
+  for(var f in this.features){
+    var feature = this.features[f];
+    if(feature.filter.type == 'integer' || feature.filter.type == 'float'){
+      if(this.chartDataX == null){
+        this.chartDataX = feature;
+      }else if(this.chartDataY == null){
+        this.chartDataY = feature;
+        break;
+      }
+    }
+  }
+  if(this.chartDataX != null && this.chartDataY != null){
+    this.chartData = {
+      type: 'bubble',
+      data: {
+          datasets: []
+      },
+      options:{
+        animation:false
+      }
+    };
+    for(var p in this.products){
+      var product = this.products[p];
+      this.chartData.data.datasets.push({
+         label: product.getCell(this.features[0]).content,
+         data: [{
+           x: parseFloat(product.getCell(this.chartDataX).content),
+           y: parseFloat(product.getCell(this.chartDataY).content),
+           r: 10
+         }]
+      });
+    }
+    this.chart = new Chart(this.chartCanvas[0], this.chartData);
+  }else{
+    console.log('Not enough numeric value for chart');
   }
 }
 
@@ -323,7 +399,7 @@ function Filter(feature, editor){
   this.lower = false; //Minimum value which match filter
   this.upper = false; //Maximum value which match filter
   this.step = 1; //Step for the slider when feature is a numeric value
-  this.type = "undefined"; //Type of the values : Integer, Float, String
+  this.type = "undefined"; //Type of the values : integer, float, string
   this.search = ""; //Will contain a regexp entered by the user in a search form, TODO
   this.sorting = NO_SORTING;
 
@@ -539,7 +615,7 @@ Filter.prototype.toggleShow = function(){
 
 //Change sorting
 Filter.prototype.swapSorting = function(){
-  console.log("Swap sorting for feature : "+this.feature.name);
+  //console.log("Swap sorting for feature : "+this.feature.name);
   if(this.sorting==ASCENDING_SORTING){
     this.setSorting(DESCENDING_SORTING);
   }else{
