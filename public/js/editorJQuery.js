@@ -58,9 +58,22 @@ function Editor(divID, pcmID){
   //Create pcmDiv
   this.views.pcmDiv = $("<div>").addClass("pcm-table").appendTo(this.pcmWrap);
 
-  //Create chart view
-  this.views.chartDiv = $("<div>").html("Chart").appendTo(this.pcmWrap);
-  this.chartCanvas = $('<canvas>').appendTo(this.views.chartDiv);
+  //Create chart
+  this.chart = null; //Chart object for ChartJS
+  this.chartDataX = null; //feature for x
+  this.chartDataY = null; //feature for y
+  this.views.chartDiv = $("<div>").appendTo(this.pcmWrap);
+  this.chartXLabel = $('<label>').html(' x : ').appendTo(this.views.chartDiv);
+  this.chartXselect = $('<select>').appendTo(this.views.chartDiv).change(function(){
+    self.chartDataX = self.getFeatureByID(self.chartXselect.val());
+    self.drawChart();
+  });
+  this.chartYLabel = $('<label>').html(' y : ').appendTo(this.views.chartDiv);
+  this.chartYselect = $('<select>').appendTo(this.views.chartDiv).change(function(){
+    self.chartDataY = self.getFeatureByID(self.chartYselect.val());
+    self.drawChart();
+  });;
+  this.chartCanvas = null;
 
   this.showView('pcmDiv');
 }
@@ -95,6 +108,18 @@ Editor.prototype.getFeatureByName = function(name){
   return feature;
 }
 
+//get feature by generated_KMF_ID
+Editor.prototype.getFeatureByID = function(id){
+  var feature = false;
+  for(var f in this.features){
+    if(this.features[f].generated_KMF_ID === id){
+      feature = this.features[f];
+      break;
+    }
+  }
+  return feature;
+}
+
 //Load the pcm
 Editor.prototype.loadPCM = function(pcmID=false){
   var that = this;
@@ -113,6 +138,8 @@ Editor.prototype.loadPCM = function(pcmID=false){
     that.products = [];
     for (var p in that.pcm.products.array) {
       var product = that.pcm.products.array[p];
+      product.visible = true;
+      product.dataset = null; //dataset for chart
 
       product.cellsByFeature = {};
       for(var c in product.cells.array){
@@ -150,6 +177,7 @@ Editor.prototype.loadPCM = function(pcmID=false){
 
       //Add a function that hide/show cells (used to hide products that doesn't match configurator)
       product.setVisible = function(visible){
+        this.visible = visible;
         for(var c in this.cells.array){
           if(visible){
             this.cells.array[c].div.removeClass("hidden");
@@ -157,6 +185,23 @@ Editor.prototype.loadPCM = function(pcmID=false){
             this.cells.array[c].div.addClass("hidden");
           }
         }
+        if(this.dataset != null){
+          this.dataset.hidden = !this.visible;
+        }
+      }
+
+      product.newDataset = function(n, x, y){
+        var self = this;
+        this.dataset = {
+           label: self.getCell(n).content,
+           hidden: !self.visible,
+           data: [{
+             x: parseFloat(self.getCell(x).content),
+             y: parseFloat(self.getCell(y).content),
+             r: 10
+           }]
+        };
+        return this.dataset;
       }
 
       that.products.push(product);
@@ -219,6 +264,9 @@ Editor.prototype.pcmLoaded = function(){
 
   //Sort products on first feature (display inside by calling Editor.initPCM())
   this.features[0].filter.setSorting(ASCENDING_SORTING);
+
+  //init the chart
+  this.initChart();
 }
 
 //Called in pcmLoaded to update the pcm
@@ -234,9 +282,10 @@ Editor.prototype.initPCM = function(){
       col.append(this.products[p].getCell(this.features[f]).div);
     }
   }
-  //init chart
-  this.chartDataX = null;
-  this.chartDataY = null;
+}
+
+//init chart
+Editor.prototype.initChart = function(){
   for(var f in this.features){
     var feature = this.features[f];
     if(feature.filter.type == 'integer' || feature.filter.type == 'float'){
@@ -244,34 +293,51 @@ Editor.prototype.initPCM = function(){
         this.chartDataX = feature;
       }else if(this.chartDataY == null){
         this.chartDataY = feature;
-        break;
       }
+      this.chartXselect.append('<option value="'+feature.generated_KMF_ID+'">'+feature.name+'</option>');
+      this.chartYselect.append('<option value="'+feature.generated_KMF_ID+'">'+feature.name+'</option>');
     }
   }
+  this.drawChart();
+}
+
+//Draw chart using this.chartDataX and this.chartDataY
+Editor.prototype.drawChart = function(){
   if(this.chartDataX != null && this.chartDataY != null){
+    if(this.chartCanvas != null){
+      this.chartCanvas.remove();
+    }
+    this.chartCanvas = $('<canvas>').appendTo(this.views.chartDiv);
     this.chartData = {
       type: 'bubble',
       data: {
           datasets: []
       },
       options:{
-        animation:false
+        animation: false,
+        scales: {
+          xAxes: [{
+            scaleLabel: {
+              display: true,
+              labelString: this.chartDataX.name
+            }
+          }],
+          yAxes: [{
+            scaleLabel: {
+              display: true,
+              labelString: this.chartDataY.name
+            }
+          }]
+        }
       }
     };
     for(var p in this.products){
       var product = this.products[p];
-      this.chartData.data.datasets.push({
-         label: product.getCell(this.features[0]).content,
-         data: [{
-           x: parseFloat(product.getCell(this.chartDataX).content),
-           y: parseFloat(product.getCell(this.chartDataY).content),
-           r: 10
-         }]
-      });
+      this.chartData.data.datasets.push(product.newDataset(this.features[0], this.chartDataX, this.chartDataY));
     }
     this.chart = new Chart(this.chartCanvas[0], this.chartData);
   }else{
-    console.log('Not enough numeric value for chart');
+    console.log('X or Y features not defined');
   }
 }
 
@@ -322,6 +388,11 @@ Editor.prototype.filterChanged = function(filter){
     var product = this.products[p]; // get the product
     // chech if the product match all filters (product.match() is not evaluated if filter.match(product.getCell(filter.feature))==false, it's better for perf)
     product.setVisible(filter.match(product.getCell(filter.feature)) && product.match());
+  }
+
+  //Update chart
+  if(this.chart != null){
+    this.chart.update();
   }
 }
 
