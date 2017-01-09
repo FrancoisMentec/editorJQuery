@@ -95,9 +95,9 @@ function PcmApi(){
     api.base64PCMVisitor = function (pcm, encoding) {
         function encodeToBase64(str, encoding) {
             if (encoding) {
-                return btoa(str);
+                return Base64.encode(str);
             } else {
-                return atob(str);
+                return Base64.decode(str);
             }
         }
 

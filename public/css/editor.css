@@ -4,6 +4,11 @@
 }
 
 @font-face {
+    font-family: Roboto-Medium;
+    src: url(/font/Roboto-Medium.ttf);
+}
+
+@font-face {
     font-family: Roboto-Bold;
     src: url(/font/Roboto-Bold.ttf);
 }
@@ -13,10 +18,51 @@
     src: url(/font/Roboto-Black.ttf);
 }
 
+@font-face {
+  font-family: 'Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url(/font/MaterialIcons-Regular.ttf);
+}
+
+.material-icons {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;  /* Preferred icon size */
+  display: inline-block;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Support for IE. */
+  font-feature-settings: 'liga';
+}
+
 html, body{
   width: 100%;
   height: 100%;
   margin: 0;
+}
+
+a{
+  color: #26a69a;
+  text-decoration: none;
+  font-family: Roboto-Medium;
+}
+
+a:hover{
+  text-decoration: underline;
 }
 
 /**************************************************************************************************************************************************************************/
@@ -31,6 +77,8 @@ html, body{
 /**************************************************************************************************************************************************************************/
 /* header */
 .editor-header{
+  transition: 0.2s;
+  transition-property: height;
 	box-sizing: border-box;
 	width: 100%;
 	height: 5.6em; /* 1 pcm-name + 2 pcm-param */
@@ -39,6 +87,12 @@ html, body{
 	line-height: 1.6em;
 	border-bottom: 1px solid #BDBDBD;
 	background-color: white;
+  overflow: hidden;
+}
+
+.editor-header.hidden{
+  height: 0;
+  border-width: 0;
 }
 
 .pcm-name{
@@ -71,6 +125,13 @@ html, body{
 	box-shadow: 0 2px 4px #BDBDBD;
 }
 
+.editor-action-bar-right-pane{
+  display: inline-block;
+  height: 100%;
+  float: right;
+  vertical-align: top;
+}
+
 .editor-action-bar .button{
   display: inline-block;
 	box-sizing: border-box;
@@ -83,7 +144,11 @@ html, body{
 	border-radius: 2px;
 	background-color: transparent;
   cursor: pointer;
+  user-select: none;
+  color: black;
+  box-shadow: none !important;
 }
+
 .editor-action-bar .button:hover{
 	background-color: #E0E0E0;
 }
@@ -107,8 +172,13 @@ html, body{
 /**************************************************************************************************************************************************************************/
 /* content : configurator and pcm-wrap */
 .editor-content{
+  transition: 0.2s;
 	width: 100%;
 	height: calc(100% - 5.6em - 35px); /* 100% - configurator-header.height - configurator-action-bar.height */
+}
+
+.editor-content.full-height{
+  height: calc(100% - 35px); /* 100% - configurator-action-bar.height */
 }
 
 .configurator, .pcm-wrap{
@@ -125,6 +195,7 @@ html, body{
 	overflow: auto;
 	border-right: 1px solid #BDBDBD;
 	background-color: #EEEEEE;
+  box-shadow: 2px 1px 4px #BDBDBD;
 }
 
 .configurator.hidden{
@@ -135,11 +206,17 @@ html, body{
 	transition: 0.2s;
 	width: calc(100% - 200px);
 	height: 100%;
-	overflow: auto;
 }
 
 .pcm-wrap.full-width{
   width: calc(100% - 1px);
+}
+
+.pcm-wrap > *{
+  display: none;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
 }
 
 /**************************************************************************************************************************************************************************/
@@ -162,6 +239,7 @@ html, body{
 	font-family: Roboto-Bold;
 	background-color: transparent;
 	cursor: pointer;
+  user-select: none;
 }
 
 .feature-button:hover{
@@ -213,6 +291,54 @@ html, body{
 
 .search-input:focus{
   border-color: #26a69a;
+}
+
+/**************************************************************************************************************************************************************************/
+/* Button */
+.button{
+	position: relative;
+	transition: 0.2s;
+	box-sizing: border-box;
+	min-width: 80px;
+	height: 36px;
+	line-height: 36px;
+	padding: 0;
+	padding-left: 16px;
+	padding-right: 16px;
+	border: none;
+	border-radius: 2px;
+	margin: 8px;
+	background-color: #26a69a;
+	font-family: Roboto-Medium;
+	font-size: 1em;
+	color: white;
+	text-align: center;
+	cursor: pointer;
+	outline: none;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.button *{
+	vertical-align: middle;
+}
+
+.button:hover{
+	box-shadow: 0 2px 2px rgba(0,0,0,0.26);
+}
+
+.button:active{
+	background-color: #00897B
+}
+
+.button:focus::after{
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0,0,0,0.12);
 }
 
 /**************************************************************************************************************************************************************************/
@@ -333,14 +459,15 @@ input[type="checkbox"]:checked+.checkbox-label{
 
 /**************************************************************************************************************************************************************************/
 /* PCM */
-.pcm{
+.pcm-table{
+  position: relative;
   min-width: 100%;
-  min-height: 100%;
   white-space: nowrap;
 }
 
 .pcm-column{
   display: inline-block;
+  vertical-align: top;
 }
 
 .integer, .float{
@@ -363,15 +490,69 @@ input[type="checkbox"]:checked+.checkbox-label{
 }
 
 .pcm-column-header{
+  position: relative;
   height: 56px;
   line-height: 56px;
   font-size: 1em;
   font-family: Roboto-Bold;
   color: #9E9E9E;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pcm-column-header:hover{
+  border-bottom: 2px solid #26a69a;
+}
+
+.pcm-column-header.ascending, .pcm-column-header.descending{
+  color: #26a69a;
+}
+
+.string .pcm-column-header::after{
+  content: "";
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  display: inline-block;
+  width: 1em;
+  vertical-align: top;
+  margin-left: 12px;
+}
+
+.string .pcm-column-header.ascending::after{
+  content: "arrow_downward";
+}
+
+.string .pcm-column-header.descending::after{
+  content: "arrow_upward";
+}
+
+.integer .pcm-column-header::before, .float .pcm-column-header::before{
+  content: "";
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  display: inline-block;
+  width: 1em;
+  vertical-align: top;
+  margin-right: 12px;
+}
+
+.integer .pcm-column-header.ascending::before, .float .pcm-column-header.ascending::before{
+  content: "arrow_downward";
+}
+
+.integer .pcm-column-header.descending::before, .float .pcm-column-header.descending::before{
+  content: "arrow_upward";
 }
 
 .pcm-cell{
   height: 48px;
+  max-width: 80em;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 48px;
   font-size: 1.1em;
   color: #212121;
@@ -380,3 +561,47 @@ input[type="checkbox"]:checked+.checkbox-label{
 .pcm-cell.hidden{
   display: none;
 }
+
+/*
+Table version (unused)
+
+.integer, .float{
+  text-align: right !important;
+}
+
+.pcm tr{
+  border-bottom: 1px solid #BDBDBD;
+}
+
+.pcm th, td{
+  text-align: left;
+  padding: 0 28px 0 28px;
+  border-bottom: 1px solid #BDBDBD;
+}
+
+.pcm th:first-child, .pcm td:first-child{
+  padding-left: 24px;
+}
+
+.pcm th:last-child, .pcm td:last-child{
+  padding-right: 24px;
+}
+
+.pcm th{
+  height: 56px;
+  line-height: 56px;
+  font-size: 1em;
+  font-family: Roboto-Bold;
+  color: #9E9E9E;
+}
+
+.pcm td{
+  height: 48px;
+  line-height: 48px;
+  font-size: 1.1em;
+  color: #212121;
+}
+
+.pcm td.hidden{
+  display: none;
+}*/
