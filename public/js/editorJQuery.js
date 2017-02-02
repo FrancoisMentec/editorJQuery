@@ -128,7 +128,9 @@ Editor.prototype.loadPCM = function(pcmID=false){
   }
 
   //API url : https://opencompare.org/api/get/
-  $.get("/pcm/"+this.pcmID, function(data) {
+  // or relative, local path "/get/"
+  // I propose to change pcmID as pcmLocation; as such the user can specify an opencompare ID or a local file 
+  $.get("https://opencompare.org/api/get/"+this.pcmID, function(data) {
     that.metadata = data.metadata; //Get metadata
     that.pcm = pcmApi.loadPCMModelFromString(JSON.stringify(data.pcm)); //Load PCM
     //console.log(data);
